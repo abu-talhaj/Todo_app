@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:todo_app/db_helper.dart';
+import 'package:todo_app/todo_details_screen.dart';
 import 'package:todo_app/todo_model.dart';
 import 'package:todo_app/todo_provider.dart';
 
@@ -12,16 +13,21 @@ class TodoScreen extends StatefulWidget {
 }
 
 class _TodoScreenState extends State<TodoScreen> {
+  List<bool> selectedIndex = [];
+
   TextEditingController titleClt = TextEditingController();
   TextEditingController contentClt = TextEditingController();
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    Future.microtask(
-      () => Provider.of<TodoProvider>(context, listen: false).loadTasks(),
-    );
+    Future.microtask(() async {
+      final provider = Provider.of<TodoProvider>(context, listen: false);
+      await provider.loadTasks();
+      setState(() {
+        selectedIndex = List<bool>.filled(provider.taskList.length, false);
+      });
+    });
   }
 
   @override
@@ -48,29 +54,66 @@ class _TodoScreenState extends State<TodoScreen> {
 
               itemBuilder: (context, index) {
                 final to = tasks[index];
-                return ListTile(
-                  leading: CircleAvatar(child: Text((index + 1).toString())),
-                  title: Text(to.title),
-                  subtitle: Text(to.content),
-                  trailing: SizedBox(
-                    height: 60.0,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          onPressed: () {},
-                          icon: Icon(Icons.edit, color: Colors.green),
+                bool isCheck = selectedIndex[index];
+                return Card(
+                  child: ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TodoDetailsScreen(
+                            title: to.title,
+                            content: to.content,
+                          ),
                         ),
-                        IconButton(
-                          onPressed: () async{
-                            await todoProvider.deleteTask(to.id!);
+                      );
+                    },
+                    // leading: CircleAvatar(child: Text((index + 1).toString())),
+                    leading: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          if (index > 0 &&
+                              !selectedIndex[index - 1] &&
+                              !isCheck) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Task deleted successfully')),
+                              SnackBar(content: Text("select your item")),
                             );
-                          },
-                          icon: Icon(Icons.delete, color: Colors.red),
-                        ),
-                      ],
+                            return;
+                          }
+                          selectedIndex[index] = !selectedIndex[index];
+                        });
+                      },
+                      icon: Icon(
+                        isCheck
+                            ? Icons.check_box
+                            : Icons.check_box_outline_blank,
+                        color: isCheck ? Colors.green : Colors.grey,
+                      ),
+                    ),
+                    title: Text(to.title),
+                    subtitle: Text(to.content),
+                    trailing: SizedBox(
+                      height: 60.0,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            onPressed: () {},
+                            icon: Icon(Icons.edit, color: Colors.green),
+                          ),
+                          IconButton(
+                            onPressed: () async {
+                              await todoProvider.deleteTask(to.id!);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Task deleted successfully'),
+                                ),
+                              );
+                            },
+                            icon: Icon(Icons.delete, color: Colors.red),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
