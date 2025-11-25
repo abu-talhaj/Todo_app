@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:share_plus/share_plus.dart';
 
 class TodoDetailsScreen extends StatefulWidget {
   final String title;
@@ -34,35 +37,54 @@ class _TodoDetailsScreenState extends State<TodoDetailsScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: widget.content));
+              Fluttertoast.showToast(msg: "Copied to Clipboard");
+            },
+            icon: Icon(Icons.copy, color: Colors.white),
+          ),
+          SizedBox(width: 4.0),
+          IconButton(
+            onPressed: () {
+              Share.share(widget.content,);
+            },
+            icon: Icon(Icons.share, color: Colors.white),
+          ),
+        ],
       ),
-      body: Container(
-        padding: EdgeInsets.all(15.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Center(
-              child: Text(
-                widget.title,
-                style: TextStyle(
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+      body: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Container(
+          padding: EdgeInsets.all(15.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  widget.title,
+                  style: TextStyle(
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: 12.0),
-            Align(
-              alignment: Alignment.topLeft,
-              child: Text(
-                widget.content,
-                style: TextStyle(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.black,
+              SizedBox(height: 12.0),
+              Align(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  widget.content,
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

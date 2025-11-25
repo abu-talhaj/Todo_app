@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:todo_app/db_helper.dart';
 import 'package:todo_app/todo_details_screen.dart';
-import 'package:todo_app/todo_model.dart';
 import 'package:todo_app/todo_provider.dart';
 
 class TodoScreen extends StatefulWidget {
@@ -34,6 +32,9 @@ class _TodoScreenState extends State<TodoScreen> {
   Widget build(BuildContext context) {
     final todoProvider = Provider.of<TodoProvider>(context);
     final tasks = todoProvider.taskList;
+    if (selectedIndex.length != tasks.length) {
+      selectedIndex = List<bool>.filled(tasks.length, false);
+    }
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.brown,
@@ -47,78 +48,96 @@ class _TodoScreenState extends State<TodoScreen> {
         ),
         centerTitle: true,
       ),
-      body: tasks.isEmpty
-          ? Center(child: Text("Empty notes"))
-          : ListView.builder(
-              itemCount: tasks.length,
-
-              itemBuilder: (context, index) {
-                final to = tasks[index];
-                bool isCheck = selectedIndex[index];
-                return Card(
-                  child: ListTile(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TodoDetailsScreen(
-                            title: to.title,
-                            content: to.content,
+      body: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: tasks.isEmpty
+            ? Center(child: Text("Empty notes"))
+            : ListView.builder(
+                itemCount: tasks.length,
+                itemBuilder: (context, index) {
+                  final to = tasks[index];
+                  bool isCheck = selectedIndex[index];
+                  return Card(
+                    child: ListTile(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TodoDetailsScreen(
+                              title: to.title,
+                              content: to.content,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    // leading: CircleAvatar(child: Text((index + 1).toString())),
-                    leading: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          if (index > 0 &&
-                              !selectedIndex[index - 1] &&
-                              !isCheck) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("select your item")),
-                            );
-                            return;
-                          }
-                          selectedIndex[index] = !selectedIndex[index];
-                        });
+                        );
                       },
-                      icon: Icon(
-                        isCheck
-                            ? Icons.check_box
-                            : Icons.check_box_outline_blank,
-                        color: isCheck ? Colors.green : Colors.grey,
-                      ),
-                    ),
-                    title: Text(to.title),
-                    subtitle: Text(to.content),
-                    trailing: SizedBox(
-                      height: 60.0,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            onPressed: () {},
-                            icon: Icon(Icons.edit, color: Colors.green),
-                          ),
-                          IconButton(
-                            onPressed: () async {
-                              await todoProvider.deleteTask(to.id!);
+                      // leading: CircleAvatar(child: Text((index + 1).toString())),
+                      leading: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            if (index > 0 &&
+                                !selectedIndex[index - 1] &&
+
+                                !selectedIndex[index]) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Task deleted successfully'),
-                                ),
+                                SnackBar(content: Text("select your item")),
                               );
-                            },
-                            icon: Icon(Icons.delete, color: Colors.red),
-                          ),
-                        ],
+                              return;
+                            }
+                            selectedIndex[index] = !selectedIndex[index];
+                          });
+                        },
+                        icon: Icon(
+                          selectedIndex[index]
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          color:selectedIndex[index] ? Colors.green : Colors.grey,
+                        ),
+                      ),
+                      title: Text(to.title),
+                      subtitle: Text(
+                        to.content,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
+                      trailing: SizedBox(
+                        height: 60.0,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                titleClt.text = to.title;
+                                contentClt.text = to.content;
+                                viewDialouges(context, todoProvider, to.id!);
+                              },
+                              icon: Icon(Icons.edit, color: Colors.green),
+                            ),
+
+                            IconButton(
+                              onPressed: () async {
+                                await todoProvider.deleteTask(to.id!);
+                                setState(() {
+                                  selectedIndex = List<bool>.filled(
+                                    tasks.length - 1,
+                                    false,
+                                  );
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Task deleted successfully'),
+                                  ),
+                                );
+                              },
+                              icon: Icon(Icons.delete, color: Colors.red),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
+      ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.purple,
         child: Icon(Icons.add, color: Colors.white),
@@ -129,8 +148,8 @@ class _TodoScreenState extends State<TodoScreen> {
     );
   }
 
-  viewDialouge(context, index) {
-    final todoProvider = Provider.of<TodoProvider>(context, listen: false);
+  viewDialouge(BuildContext context, TodoProvider todoProvider) {
+    // final todoProvider = Provider.of<TodoProvider>(context, listen: false);
     showDialog(
       context: context,
       builder: (BuildContext dialogcontext) {
@@ -177,9 +196,90 @@ class _TodoScreenState extends State<TodoScreen> {
                             titleClt.text,
                             contentClt.text,
                           );
+                          setState(() {
+                            selectedIndex = List<bool>.filled(
+                              todoProvider.taskList.length,
+                              false,
+                            );
+                          });
                           titleClt.clear();
                           contentClt.clear();
                           Navigator.pop(context);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Fill all fields")),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  viewDialouges(BuildContext context, TodoProvider todoProvider, int id) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogcontext) {
+        return Center(
+          child: SingleChildScrollView(
+            child: AlertDialog(
+              content: Column(
+                children: [
+                  TextField(
+                    controller: titleClt,
+                    decoration: InputDecoration(hintText: 'Title name'),
+                  ),
+                  TextField(
+                    controller: contentClt,
+                    decoration: InputDecoration(hintText: 'Description'),
+                  ),
+                ],
+              ),
+              actions: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: Text('Cancel'),
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    TextButton(
+                      child: Text('Update'),
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.pinkAccent,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () async {
+                        final title = titleClt.text.trim();
+                        final content = contentClt.text.trim();
+
+                        if (title.isNotEmpty && content.isNotEmpty) {
+
+                          await todoProvider.updateTask(
+                            id,
+                            title,
+                            content,
+                          );
+
+                          setState(() {});
+
+                          titleClt.clear();
+                          contentClt.clear();
+
+                          Navigator.pop(context);
+
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text("Fill all fields")),

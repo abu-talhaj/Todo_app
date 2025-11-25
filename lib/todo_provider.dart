@@ -17,20 +17,21 @@ class TodoProvider extends ChangeNotifier {
   Future<void> addTask(String title, String content) async {
     final now = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
-    final newTask = TodoModel(id: null, title: title, content: content, date: now);
+    final newTask = TodoModel(
+      id: null,
+      title: title,
+      content: content,
+      date: now,
+    );
 
     await _dbHelper.insertTask(newTask);
     await loadTasks();
   }
 
-  Future<void> updateTask(
-    TodoModel task,
-    String newTitle,
-    String newContent,
-  ) async {
+  Future<void> updateTask(int id, String newTitle, String newContent) async {
     final now = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
     final updatedTask = TodoModel(
-      id: task.id,
+      id: id,
       title: newTitle,
       content: newContent,
       date: now,
